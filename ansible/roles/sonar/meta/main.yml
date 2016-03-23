@@ -1,0 +1,9 @@
+---
+
+# file: roles/sonar/meta/main.yml
+
+dependencies:
+    - {role: locales}
+    - {role: unzip}
+    - {role: java8}
+    - {role: postgres}

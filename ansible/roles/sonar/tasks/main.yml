@@ -1,0 +1,64 @@
+---
+
+# file: /roles/sonar/tasks/main.yml
+
+- name: download sonar
+  get_url: url="{{sonar.download_url}}" dest="/tmp/{{sonar.archive}}"
+  tags: sonar
+
+- name: create sonar group
+  group: name=sonar state=present
+  tags: sonar
+
+- name: create sonar user
+  user: name=sonar comment="Sonar" group=sonar
+  tags: sonar
+
+- name: extract sonar
+  unarchive: src="/tmp/{{sonar.archive}}" dest=/opt copy=no
+  tags: sonar
+
+- name: move sonar to its right place
+  shell: mv /opt/{{sonar.version_dir}} {{sonar.home}} chdir=/opt
+  register: result
+  failed_when: '"mv: cannot move ‘/opt/sonarqube-5.1.1’ to ‘/opt/sonar/sonarqube-5.1.1’: Directory not empty" not in result.stderr'
+  tags: sonar
+
+- name: change ownership of sonar dir
+  file: path="{{sonar.home}}" owner=sonar group=sonar recurse=yes
+  tags: sonar
+
+- name: copy sonar properties
+  template: src=sonar.properties dest="{{sonar.home}}/conf/sonar.properties"
+  tags: sonar
+
+- name: make sonar runned by sonar user
+  replace: dest="{{sonar.home}}/bin/linux-x86-64/sonar.sh" regexp="#RUN_AS_USER=(.*)$" replace="RUN_AS_USER=sonar"
+  tags: sonar
+
+- name: add sonar links for service management
+  file: src="{{sonar.home}}/bin/linux-x86-64/sonar.sh" dest="{{item}}" state=link
+  with_items:
+    - /usr/bin/sonar
+    - /etc/init.d/sonar
+  tags: sonar
+
+- name: ensure sonar is running and enabled as service
+  service: name=sonar state=restarted enabled=yes
+  tags: sonar
+
+- name: create database for sonar
+  postgresql_db: name="{{datasource.sonar_dbname}}" encoding=UTF-8 lc_collate=es_ES.UTF-8 lc_ctype=es_ES.UTF-8
+  sudo: yes
+  sudo_user: postgres
+  tags:
+      - sonar
+      - sonardb
+
+- name: add user to database
+  postgresql_user: db="{{datasource.sonar_dbname}}" name="{{datasource.sonar_dbuser}}" password="{{datasource.sonar_dbpassword}}" priv=ALL
+  sudo: yes
+  sudo_user: postgres
+  tags:
+      - sonar
+      - sonardb

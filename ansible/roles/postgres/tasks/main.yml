@@ -1,0 +1,50 @@
+---
+# file: /roles/postgres/task/main.yml
+
+- name: ensure PostgreSQL are installed
+  apt: name={{item}} update_cache=Yes
+  with_items:
+      - postgresql-{{postgres.version}}
+      - postgresql-contrib-{{postgres.version}}
+      - python-psycopg2
+
+- name: ensure client's encoding is UTF-8
+  lineinfile:
+      dest: /etc/postgresql/{{postgres.version}}/main/postgresql.conf
+      backup: yes
+      insertafter: "#client_encoding = sql_ascii"
+      line: "client_encoding = utf8"
+
+- name: ensure PostgreSQL is running
+  service: name=postgresql state=restarted enabled=yes
+
+# Only for develoment
+- name: ensure PostgreSQL is accesible from other hosts
+  lineinfile:
+      dest: /etc/postgresql/{{postgres.version}}/main/postgresql.conf
+      insertafter: "#listen_addresses = 'localhost'"
+      line: "listen_addresses = '*'    # Development environment!!!"
+
+- name: ensure user can access database from other hosts
+  lineinfile:
+      dest: /etc/postgresql/{{postgres.version}}/main/pg_hba.conf
+      line: "host    {{datasource.dbname}}           {{datasource.dbuser}}           all                     md5    # Development environment!!!"
+
+- name: ensure database is created
+  sudo_user: postgres
+  postgresql_db:
+    name: "{{datasource.dbname}}"
+    encoding: UTF-8
+    lc_collate: es_ES.UTF-8
+    lc_ctype: es_ES.UTF-8
+
+- name: ensure user has access to database
+  sudo_user: postgres
+  postgresql_user:
+    db: "{{datasource.dbname}}"
+    name: "{{datasource.dbuser}}"
+    password: "{{datasource.dbpassword}}"
+    priv: ALL
+
+- name: restart postgresql
+  service: name=postgresql state=restarted

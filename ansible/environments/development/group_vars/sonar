@@ -1,0 +1,21 @@
+---
+
+postgres:
+    version: 9.3
+
+sonar:
+    download_url: http://downloads.sonarsource.com/sonarqube/sonarqube-5.1.1.zip
+    archive: sonar.zip
+    version_dir: sonarqube-5.1.1
+    home: /opt/sonar
+    jdbc_driver: postgres
+    jdbc_host: localhost
+    jdbc_port: 5432
+
+datasource:
+    dbuser: usuario
+    dbpassword: pass
+    dbname: test
+    sonar_dbuser: sonar
+    sonar_dbpassword: sonarpassword
+    sonar_dbname: sonardb

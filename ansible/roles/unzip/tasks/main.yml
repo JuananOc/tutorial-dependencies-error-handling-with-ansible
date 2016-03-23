@@ -1,0 +1,6 @@
+---
+
+# file: roles/unzip/tasks/main.yml
+
+- name: install unzip command
+  apt: name=unzip state=present
