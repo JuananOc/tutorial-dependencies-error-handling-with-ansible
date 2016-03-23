@@ -1,6 +1,0 @@
----
-
-# file: /roles/database/handlers/main.yml
-
-- name: restart postgresql
-  service: name=postgresql state=restarted
